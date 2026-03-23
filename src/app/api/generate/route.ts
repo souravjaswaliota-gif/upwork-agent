@@ -54,6 +54,7 @@ STRICT RULES:
 - Output ONLY the final proposal text. No explanations.
 
 JOB DESCRIPTION TO ANALYZE:
+{JOB_DESCRIPTION}
 `;
 
 export async function POST(request: Request) {
