@@ -1,41 +1,42 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
+// 1. Setup the AI with a STABLE model (gemini-1.5-flash)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(req: Request) {
   try {
     const data = await req.json();
 
-    // 1. YOUR SAM PROMPT (Make sure it includes {JOB_DESCRIPTION} inside the text)
-    const SYSTEM_PROMPT = `You are Sam's elite Upwork proposal writer... {JOB_DESCRIPTION}`;
+    // 2. Sam's Professional Upwork Prompt
+    const SYSTEM_PROMPT = `You are Sam's elite Upwork proposal writer. Sam is a 15+ year digital marketing expert. {JOB_DESCRIPTION}`;
 
     let finalPrompt = "";
 
-    // 2. DETECT WHICH AGENT IS CALLING
+    // 3. Detect if it's the Upwork Agent or the Scout Agent
     if (data.jobDescription) {
-      // It's the Upwork Agent
+      // It's the Upwork Page
       finalPrompt = SYSTEM_PROMPT.replace("{JOB_DESCRIPTION}", data.jobDescription);
     } else if (data.prompt) {
-      // It's the Scout Agent
+      // It's the Scout Page
       finalPrompt = data.prompt;
     } else {
-      return NextResponse.json({ error: "No input provided" }, { status: 400 });
+      return NextResponse.json({ error: "No data received" }, { status: 400 });
     }
 
-    // 3. RUN THE AI
+    // 4. Run the AI (Using 1.5-flash for maximum stability)
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent(finalPrompt);
-    const responseText = result.response.text();
+    const text = result.response.text();
 
-    // 4. THE FIX: Return both keys so both pages are happy
+    // 5. Return both keys so no frontend page crashes
     return NextResponse.json({
-      proposal: responseText, // Upwork expects this
-      text: responseText      // Scout expects this
+      proposal: text, // For Upwork
+      text: text      // For Scout
     });
 
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("API Error:", error);
+    return NextResponse.json({ error: "AI Connection Failed" }, { status: 500 });
   }
 }
