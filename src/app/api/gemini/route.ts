@@ -12,8 +12,7 @@ export async function POST(req: Request) {
 
         const genAI = new GoogleGenerativeAI(apiKey);
         // Using 1.5-flash because it is the most reliable version right now
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
         const prompt = data.jobDescription
             ? `Write a professional Upwork proposal for: ${data.jobDescription}`
             : data.prompt;
