@@ -1,42 +1,34 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-// 1. Setup the AI with a STABLE model (gemini-1.5-flash)
+// 1. Initialize
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(req: Request) {
   try {
     const data = await req.json();
 
-    // 2. Sam's Professional Upwork Prompt
-    const SYSTEM_PROMPT = `You are Sam's elite Upwork proposal writer. Sam is a 15+ year digital marketing expert. {JOB_DESCRIPTION}`;
+    // 2. Setup the prompt
+    const SAM_PROMPT = `You are Sam, an elite digital marketing consultant. {JOB_DESCRIPTION}`;
+    let finalPrompt = data.jobDescription
+      ? SAM_PROMPT.replace("{JOB_DESCRIPTION}", data.jobDescription)
+      : data.prompt;
 
-    let finalPrompt = "";
+    if (!finalPrompt) return NextResponse.json({ error: "No input" }, { status: 400 });
 
-    // 3. Detect if it's the Upwork Agent or the Scout Agent
-    if (data.jobDescription) {
-      // It's the Upwork Page
-      finalPrompt = SYSTEM_PROMPT.replace("{JOB_DESCRIPTION}", data.jobDescription);
-    } else if (data.prompt) {
-      // It's the Scout Page
-      finalPrompt = data.prompt;
-    } else {
-      return NextResponse.json({ error: "No data received" }, { status: 400 });
-    }
-
-    // 4. Run the AI (Using 1.5-flash for maximum stability)
+    // 3. Use the STABLE model name
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
     const result = await model.generateContent(finalPrompt);
-    const text = result.response.text();
+    const response = await result.response;
+    const text = response.text();
 
-    // 5. Return both keys so no frontend page crashes
     return NextResponse.json({
-      proposal: text, // For Upwork
-      text: text      // For Scout
+      proposal: text,
+      text: text
     });
-
   } catch (error: any) {
-    console.error("API Error:", error);
+    console.error("DEBUG:", error);
     return NextResponse.json({ error: "AI Connection Failed" }, { status: 500 });
   }
 }
